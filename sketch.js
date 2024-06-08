@@ -1,4 +1,4 @@
-  let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
+let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
         let particles = [];
         let personX, personY;
         let snowParticles = [];
@@ -152,8 +152,8 @@
                     }
                 }
                 // Bewege das Männchen nach links
-                personX -= 1;
-                if (personX < -40) {
+                personX += 1;
+                if (personX > width) {
                     triggerJumpScare();
                 }
             } else {
