@@ -1,22 +1,52 @@
- let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
+  let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
         let particles = [];
         let personX, personY;
         let snowParticles = [];
         let snowThrowing = false;
+        let jumpScareTriggered = false;
+        let jumpScareSize = 0;
+        let audioContext, oscillator, gainNode, noiseBuffer, noiseSource;
 
         function setup() {
             createCanvas(windowWidth, windowHeight);
             background(135, 206, 235); // Himmelblau
             personX = width / 2;
             personY = height - 100;
+
+            // Audio Setup
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'square'; // Schrillerer Ton
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime); // Frequenz für schrillen Ton
+
+            // Noise Setup
+            noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+            let output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < noiseBuffer.length; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
         }
 
         function draw() {
-            background(135, 206, 235);
-            drawWeather();
-            drawPerson();
-            updateWeather();
-            drawSnow();
+            if (!jumpScareTriggered) {
+                background(135, 206, 235);
+                drawWeather();
+                drawPerson();
+                updateWeather();
+                drawSnow();
+            } else {
+                background(0);
+                drawScaryFace();
+                jumpScareSize += 20; // Vergrößern Sie das Bild mit jeder Frame
+
+                if (audioContext.currentTime > jumpScareEndTime) {
+                    stopJumpScareSound();
+                    noLoop();
+                }
+            }
         }
 
         function drawPerson() {
@@ -122,7 +152,10 @@
                     }
                 }
                 // Bewege das Männchen nach links
-                personX += 1;
+                personX -= 1;
+                if (personX < -40) {
+                    triggerJumpScare();
+                }
             } else {
                 // Sommer - klares Wetter
                 particles = [];
@@ -155,6 +188,52 @@
             for (let i = 0; i < snowParticles.length; i++) {
                 ellipse(snowParticles[i].x, snowParticles[i].y, 5, 5);
             }
+        }
+
+        function triggerJumpScare() {
+            jumpScareTriggered = true;
+            startJumpScareSound();
+            jumpScareEndTime = audioContext.currentTime + 2; // Ton für 2 Sekunden
+            audioContext.resume();
+        }
+
+        function startJumpScareSound() {
+            // Start oscillator
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+
+            // Start noise
+            noiseSource = audioContext.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+            let noiseGain = audioContext.createGain();
+            noiseSource.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            noiseGain.gain.setValueAtTime(0.5, audioContext.currentTime);
+            noiseSource.start();
+        }
+
+        function stopJumpScareSound() {
+            oscillator.stop();
+            noiseSource.stop();
+        }
+
+        function drawScaryFace() {
+            let x = width / 2;
+            let y = height / 2;
+
+            // Kopf
+            fill(0, 0, 0);
+            ellipse(x, y, jumpScareSize, jumpScareSize);
+
+            // Augen (doof gucken)
+            fill(255);
+            ellipse(x - jumpScareSize * 0.1, y - jumpScareSize * 0.1, jumpScareSize * 0.1, jumpScareSize * 0.1);
+            ellipse(x + jumpScareSize * 0.1, y - jumpScareSize * 0.1, jumpScareSize * 0.1, jumpScareSize * 0.1);
+
+            // Mund (doof gucken)
+            stroke(255);
+            strokeWeight(4);
+            line(x - jumpScareSize * 0.1, y + jumpScareSize * 0.1, x + jumpScareSize * 0.1, y + jumpScareSize * 0.1);
         }
 
         function mousePressed() {
