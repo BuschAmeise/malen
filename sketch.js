@@ -1,7 +1,7 @@
-let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
+ let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
         let particles = [];
         let personX, personY;
-        let snowLevel = 0;
+        let snowParticles = [];
         let snowThrowing = false;
 
         function setup() {
@@ -16,7 +16,7 @@ let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
             drawWeather();
             drawPerson();
             updateWeather();
-            drawSnowLevel();
+            drawSnow();
         }
 
         function drawPerson() {
@@ -94,17 +94,16 @@ let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
                 fill(255);
                 if (frameCount % 5 == 0) {
                     let snow = { x: random(width), y: 0 };
-                    particles.push(snow);
+                    snowParticles.push(snow);
                 }
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    ellipse(particles[i].x, particles[i].y, 5, 5);
-                    particles[i].y += 2;
-                    if (particles[i].y > height - snowLevel) {
-                        snowLevel += 2;
-                        particles.splice(i, 1);
+                for (let i = snowParticles.length - 1; i >= 0; i--) {
+                    ellipse(snowParticles[i].x, snowParticles[i].y, 5, 5);
+                    snowParticles[i].y += 2;
+                    if (snowParticles[i].y > height - 5 || isSnowOnSnow(snowParticles[i])) {
+                        snowParticles[i].y -= 2;
                     }
                 }
-                if (snowLevel > 50 && !snowThrowing) {
+                if (snowParticles.length > 50 && !snowThrowing) {
                     snowThrowing = true;
                     throwSnow();
                 }
@@ -130,6 +129,15 @@ let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
             }
         }
 
+        function isSnowOnSnow(snow) {
+            for (let i = 0; i < snowParticles.length; i++) {
+                if (snowParticles[i] !== snow && dist(snow.x, snow.y, snowParticles[i].x, snowParticles[i].y) < 5) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         function throwSnow() {
             for (let i = 0; i < 100; i++) {
                 let snow = {
@@ -142,15 +150,17 @@ let season = 0; // 0: Sommer, 1: Herbst, 2: Winter, 3: Frühling
             }
         }
 
-        function drawSnowLevel() {
+        function drawSnow() {
             fill(255);
-            rect(0, height - snowLevel, width, snowLevel);
+            for (let i = 0; i < snowParticles.length; i++) {
+                ellipse(snowParticles[i].x, snowParticles[i].y, 5, 5);
+            }
         }
 
         function mousePressed() {
             season = (season + 1) % 4;
             if (season != 2) {
-                snowLevel = 0;
+                snowParticles = [];
                 snowThrowing = false;
             }
         }
